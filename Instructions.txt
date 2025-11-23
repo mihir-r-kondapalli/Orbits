@@ -1,0 +1,215 @@
+Instructions
+
+
+Title Instructions: When you enter the title screen, there will be numbers and updatable objects.
+Game Instructions: When you enter the game there will be many movements and abilities to
+keep track of
+
+*Note: The logo is the white circle with 'ORBITS' in it.
+
+
+TITLE
+
+
+HEALTH
+
+
+The green number at the very bottom represents the health of each player.
+
+This can be adusted by the following:
+
+Right Arrow Key: Increase health by 1
+Left Arrow Key: Decrease health by 1
+
+The health cannot go higher than 25 and lower than 1.
+
+
+
+VOLUME - Music
+
+
+The purple number at the top left corner represents the volume of the music.
+
+This can be adusted by the following:
+
+Up Arrow Key: Increase volume by 1
+Down Arrow Key: Decrease volume by 1
+
+The volume cannot go higher than 100 and lower than 0.
+
+
+
+VOLUME - Game
+
+
+The gray number at the top right corner represents the volume of the in-game sounds.
+
+This can be adusted by the following:
+
+'=' Key: Increase sound-volume by 1
+'-' Key: Decrease sound-volume by 1
+
+The volume cannot go higher than 100 and lower than 0.
+
+*Note: As the sound-volume increases the shade of gray moves to white and as
+the sound-volume decreases the shade of gray moves to black. The keys will
+still work even if the sound-volume is 0 and is completely black.
+
+
+
+PLANETS
+
+
+The green number above the logo represents the number of planets in the game.
+
+This can be adusted by the following:
+
+'0' Key: Increase number of planets by 1
+'9' Key: Decrease number of planets by 1
+
+The number of planets cannot go higher than 10 and lower than 0.
+
+
+
+PLAYERS
+
+
+The 4 squares below the logo represent the players.
+
+The 1st rectangle signifies player 1
+
+The 2nd rectangle signifies player 2
+
+The 3rd rectangle signifies player 3
+
+The 4th rectangle signifies player 4
+
+The state of the player depends on the color of the rectangle:
+
+RED - Player Not Included
+
+GREEN - Human Player Included
+
+BLUE - Computer Player Included
+
+This can be adjusted by the following:
+
+How it is updated:
+	RED -> GREEN -> BLUE -> RED -> GREEN -> BLUE and so forth
+
+'1' Key: Updates the 1st rectangle
+
+'2' Key: Updates the 2nd rectangle
+
+'3' Key: Updates the 3rd rectangle
+
+'4' Key: Updates the 4th rectangle
+
+*Note: If 1 or less players exist, the game will automatically declare a victory for that player
+or declare a tie respectively. It is ok to have computer players only in the game.
+
+
+
+ABILITIES
+
+
+The 6 green letters above the planet number represent the abilities
+
+*Note: The applications of the abilities will be explained in the Game Instructions section
+
+'B' represents the slow projectile
+
+'C' represents the escape projectile
+
+'D' represents the black hole
+
+'E' represents the white hole
+
+'F' represents the heavy projectile
+
+'G' represents the void
+
+The state of the ability depends on the color of the letter
+
+RED - Ability Not Included
+
+GREEN - Ability Included and Ability sound on
+
+BLUE - Ability Included and Ability sound off
+
+This can be adjusted by the following:
+
+How it is updated:
+	RED -> GREEN -> BLUE -> RED -> GREEN -> BLUE and so forth
+
+'b' Key: Updates the 'B'
+
+'c' Key: Updates the 'C'
+
+'d' Key: Updates the 'D'
+
+'e' Key: Updates the 'E'
+
+'f' Key: Updates the 'F'
+
+'g' Key: Updates the 'G'
+
+*Note: Any combination of these updates will work
+
+
+
+PLAYLIST
+
+
+There is a playlist of songs that are played during the game. It only resets
+when the Title Screen is opened.
+
+*Note: Go to the 'Playlist' folder and open the file 'ReadMe.txt' for a better
+idea on who made these songs
+
+The playlist will play its songs in a shuffled order that is reset whenever the
+playlist is reset.
+
+This can be controlled by the following:
+
+'p' Key: Starts the playlist early in the title menu
+
+*Note: This will automatically be done when you start the game if it has not
+already been done
+
+'SPACE' Key: Skips to the next song
+
+'r' Key: Rewings the current song to its start
+
+
+
+START
+
+
+To start the game, you need to press the 'ENTER' Key
+
+The current song playing, with the exception of the title song, will continue after you
+start the game
+
+*Note: If the game is started when the title song is playing, a random song from the
+playlist will play
+
+
+
+EXIT
+
+
+To exit the game, press the 'q' Key
+
+*Note: This only works when on the title page
+
+
+
+
+GAME
+
+
+
+GRAVITY
+
+In the game, every object has gravity.

@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+# Orbits v-1.4
+
 import pygame
 from pygame.locals import *
 import time
@@ -17,6 +19,8 @@ BLAST_SOUND = pygame.mixer.Sound('GameSounds/laser.ogg')
 EXPLO_SOUND = pygame.mixer.Sound('GameSounds/explo.ogg')
 BLACK_HOLE_SOUND = pygame.mixer.Sound('GameSounds/blackhole.ogg')
 WHITE_HOLE_SOUND = pygame.mixer.Sound('GameSounds/whitehole.ogg')
+NEUTRONSTAR_SOUND = pygame.mixer.Sound('GameSounds/neutronstar.ogg')
+SHOCKWAVE_SOUND = pygame.mixer.Sound('GameSounds/shockwave.ogg')
 WORM_HOLE_SOUND = pygame.mixer.Sound('GameSounds/warp.ogg')
 APPEAR_SOUND = pygame.mixer.Sound('GameSounds/teleport.ogg')
 RADAR_SOUND = pygame.mixer.Sound('GameSounds/radar.ogg')
@@ -71,6 +75,7 @@ game_over = False
 clock = pygame.time.Clock()
 
 objects = []
+waves = []
 
 G = 1
 
@@ -84,15 +89,19 @@ NUM_STARS = 100
 
 playerNums = [1, 0, 0, 2]
 
-avAb = [1, 1, 1, 1, 1, 1, 1]
+avAb = [1, 1, 1, 1, 1, 1, 1, 1, 1]
+
+playG = False
 
 class Planet(object):
     def __init__(self, xpos, ypos, mass, size, init_vect):
         
+        sper = mass/650
+        
         self.xpos = xpos
         self.ypos = ypos
         self.mass = mass
-        self.size = size
+        self.size = int(sper*35)
 
         self.initX = 0
         self.initY = 0
@@ -278,11 +287,10 @@ class ProjectileB(Projectile):
         super().__init__(xpos, ypos, mass, size, init_vect, player)
     
     def add_velocity(self, v, a):
-        global G
-        G = 1
+        pass
 
 class Player(Planet):
-    def __init__(self, xpos, ypos, mass, size, init_vect, left, right, up, down, shoot, shootB, shootC, shootD, shootE, shootF, shootG, radar, player):
+    def __init__(self, xpos, ypos, mass, size, init_vect, left, right, up, down, shoot, shootB, shootC, shootD, shootE, shootF, shootG, shootH, radar, player):
 
         self.TRAIL = 8
         self.LIM = 2
@@ -315,6 +323,7 @@ class Player(Planet):
         self.shootE = shootE
         self.shootF = shootF
         self.shootG = shootG
+        self.shootH = shootH
         self.radar = radar
 
         self.add_time = time.time()
@@ -328,9 +337,11 @@ class Player(Planet):
         self.add_timeE = time.time()
         self.atE = 35
         self.add_timeF = time.time()
-        self.atF = 25
+        self.atF = 20
         self.add_timeG = time.time()
         self.atG = 40
+        self.add_timeH = time.time()
+        self.atH = 60
 
         self.player = player
 
@@ -384,36 +395,49 @@ class Player(Planet):
             if self.ypos<self.size:
                 self.ypos = self.size
 
-            if not(key[self.radar]):
-                if key[self.shoot] and time.time()-self.add_time>self.at:
+            if not(key[self.radar] and avAb[7]==1):
+                if key[self.shoot] and time.time()-self.add_time>self.at and not(key[self.down]):
                     objects.append(Projectile(self.xpos, self.ypos, 10, 5, [self.velocity[0]+self.SHOOT_V, self.velocity[1]], self.player))
                     objects[len(objects)-1].move()
                     objects[len(objects)-1].move()
                     BLAST_SOUND.play()
                     self.add_time = time.time()
 
-                if key[self.shootB] and (time.time()-self.add_timeB>self.atB and self.velocity[0]>0.4) and avAb[0]>0:
+                if key[self.shoot] and key[self.down] and time.time()-self.add_time>self.at:
+                    objects.append(Projectile(self.xpos-30*math.cos(self.velocity[1]), self.ypos-30*math.sin(self.velocity[1]), 10, 5, [0, self.velocity[1]], self.player))
+                    self.add_time = time.time()
+
+                if key[self.shootB] and (time.time()-self.add_timeB>self.atB and self.velocity[0]>0.4) and avAb[0]==1 and not(key[self.down]):
                     objects.append(ProjectileB(self.xpos, self.ypos, 0, 5, [self.velocity[0], self.velocity[1]], self.player))
                     objects[len(objects)-1].move()
                     if avAb[0]==1:
                         BLAST_SOUND.play()
                     self.add_timeB = time.time()
 
-                if key[self.shootC] and time.time()-self.add_timeC>self.atC and avAb[1]>0:
+                if key[self.shootB] and key[self.down] and time.time()-self.add_timeB>self.at and avAb[8]==1:
+
+                    waves.append(ShockWave(self.xpos+10*math.cos(-self.velocity[1]), self.ypos+10*math.sin(-self.velocity[1]), -self.velocity[1], 1.00))
+                    self.velocity[0] = 0;
+                    self.addV = 0;
+                    if avAb[8]==1:
+                        SHOCKWAVE_SOUND.play()
+                    self.add_timeB = time.time()+5
+
+                if key[self.shootC] and time.time()-self.add_timeC>self.atC and avAb[1]==1:
                     objects.append(Projectile(self.xpos, self.ypos, 10, 5, [1, self.velocity[1]], self.player))
                     objects[len(objects)-1].move()
                     if avAb[1]==1:
                         BLAST_SOUND.play()
                     self.add_timeC = time.time()
 
-                if key[self.shootD] and time.time()-self.add_timeD>self.atD and avAb[2]>0:
+                if key[self.shootD] and time.time()-self.add_timeD>self.atD and avAb[2]==1:
                     objects.append(BlackHole(self.xpos, self.ypos, 250, 15, [-10, self.velocity[1]]))
                     for i in range(0, 5):
                         objects[len(objects)-1].place_move()
                     if avAb[2]==1:
                         BLACK_HOLE_SOUND.play()
                     self.add_timeD = time.time()
-                if key[self.shootE] and time.time()-self.add_timeE>self.atE and avAb[3]>0:
+                if key[self.shootE] and time.time()-self.add_timeE>self.atE and avAb[3]==1:
                     objects.append(WhiteHole(self.xpos, self.ypos, 250, 15, [-10, self.velocity[1]]))
                     for i in range(0, 5):
                         objects[len(objects)-1].place_move()
@@ -421,7 +445,7 @@ class Player(Planet):
                         WHITE_HOLE_SOUND.play()
                     self.add_timeE = time.time()
 
-                if key[self.shootF] and time.time()-self.add_timeF>self.atF and avAb[4]>0:
+                if key[self.shootF] and time.time()-self.add_timeF>self.atF and avAb[4]==1:
                     objects.append(Projectile(self.xpos, self.ypos, 150, 10, [self.velocity[0]+3, self.velocity[1]], self.player))
                     objects[len(objects)-1].move()
                     objects[len(objects)-1].move()
@@ -432,13 +456,20 @@ class Player(Planet):
                         BLAST_SOUND.play()
                     self.add_timeF = time.time()
 
-                if key[self.shootG] and time.time()-self.add_timeG>self.atG and avAb[5]>0:
+                if key[self.shootG] and time.time()-self.add_timeG>self.atG and avAb[5]==1:
                     objects.append(Void(self.xpos, self.ypos, 80, 5, [-10, self.velocity[1]]))
                     for i in range(0, 5):
                         objects[len(objects)-1].place_move()
                     if avAb[5]==1:
                         WORM_HOLE_SOUND.play()
                     self.add_timeG = time.time()
+
+                if key[self.shootH] and time.time()-self.add_timeH>self.atH and avAb[6]==1:
+                    objects.append(NeutronStar(self.xpos, self.ypos, 100, 10, [-41, self.velocity[1]]))
+                    objects[len(objects)-1].place_move()
+                    if avAb[6]==1:
+                        NEUTRONSTAR_SOUND.play()
+                    self.add_timeH = time.time()
             else:
                 self.short_dist()
             
@@ -467,10 +498,12 @@ class Player(Planet):
             colY = False
 
         if colX:
-            self.velocity = [0.1, math.pi-self.velocity[1]]
+            self.velocity = [0.5, math.pi-self.velocity[1]]
+            self.added_v = 0.0
 
         if colY:
-            self.velocity = [0.1, 2*math.pi-self.velocity[1]]
+            self.velocity = [0.5, 2*math.pi-self.velocity[1]]
+            self.added_v = 0.0
 
     def collide(self):
         global objects
@@ -531,12 +564,33 @@ class Player(Planet):
     def draw(self):
         self.draw_score()
         
+        #for i in range(0, self.TRAIL+1):
+        #    pygame.draw.circle(screen, ((i*self.rchange), (i*self.gchange),
+        #                       (i*self.bchange)), (int(self.xpoints[i]),
+        #                                              int(self.ypoints[i])),
+        #                                                  self.size)
+        #pygame.draw.circle(screen, (self.r, self.g, self.b), (int(self.xpos), int(self.ypos)), self.size)
+
+        PROJ_SIZE = self.size+1
+        PROJ_ANG_DIFF = 7*math.pi/9
+
         for i in range(0, self.TRAIL+1):
-            pygame.draw.circle(screen, ((i*self.rchange), (i*self.gchange),
-                               (i*self.bchange)), (int(self.xpoints[i]),
-                                                      int(self.ypoints[i])),
-                                                          self.size)
-        pygame.draw.circle(screen, (self.r, self.g, self.b), (int(self.xpos), int(self.ypos)), self.size)
+            self.draw_shade(int(self.xpoints[i]), int(self.ypoints[i]), ((i*self.rchange), (i*self.gchange),(i*self.bchange)), i)
+
+        fpoint = (int(self.xpos+PROJ_SIZE*math.cos(self.velocity[1])), int(self.ypos+PROJ_SIZE*math.sin(self.velocity[1])))
+        tpoint = (int(self.xpos+PROJ_SIZE*math.cos(self.velocity[1]+PROJ_ANG_DIFF)), int(self.ypos+PROJ_SIZE*math.sin(self.velocity[1]+PROJ_ANG_DIFF)))
+        bpoint = (int(self.xpos+PROJ_SIZE*math.cos(self.velocity[1]-PROJ_ANG_DIFF)), int(self.ypos+PROJ_SIZE*math.sin(self.velocity[1]-PROJ_ANG_DIFF)))
+        pygame.draw.polygon(screen, (self.r, self.g, self.b), [fpoint, tpoint, bpoint])
+
+    def draw_shade(self, x, y, color, i):
+
+        PROJ_SIZE = self.size-(self.size-i)-1
+        PROJ_ANG_DIFF = 7*math.pi/9
+        
+        fpoint = (int(x+PROJ_SIZE*math.cos(self.velocity[1])), int(y+PROJ_SIZE*math.sin(self.velocity[1])))
+        tpoint = (int(x+PROJ_SIZE*math.cos(self.velocity[1]+PROJ_ANG_DIFF)), int(y+PROJ_SIZE*math.sin(self.velocity[1]+PROJ_ANG_DIFF)))
+        bpoint = (int(x+PROJ_SIZE*math.cos(self.velocity[1]-PROJ_ANG_DIFF)), int(y+PROJ_SIZE*math.sin(self.velocity[1]-PROJ_ANG_DIFF)))
+        pygame.draw.polygon(screen, color, [fpoint, tpoint, bpoint])
 
     def draw_score(self):
         text = font.render((str(self.health)), True, (self.r, self.g, self.b), (0, 0, 0))
@@ -573,9 +627,11 @@ class AI(Player):
         self.add_timeE = time.time()+random.uniform(0, 10)
         self.atE = 35
         self.add_timeF = time.time()+random.uniform(0, 10)
-        self.atF = 25
+        self.atF = 20
         self.add_timeG = time.time()+random.uniform(0, 10)
         self.atG = 40
+        self.add_timeH = time.time()+random.uniform(5, 25)
+        self.atH = 60
 
         self.player = player
 
@@ -621,30 +677,26 @@ class AI(Player):
             if (time.time()-self.add_timeB>self.atB and self.velocity[0]>0.4) and avAb[0]>0:
                 objects.append(ProjectileB(self.xpos, self.ypos, 0, 5, [self.velocity[0], self.velocity[1]], self.player))
                 objects[len(objects)-1].move()
-                if avAb[0]==1:
-                    BLAST_SOUND.play()
+                BLAST_SOUND.play()
                 self.add_timeB = time.time()+random.uniform(0, 10)
 
             if time.time()-self.add_timeC>self.atC and avAb[1]>0:
                 objects.append(Projectile(self.xpos, self.ypos, 10, 5, [1, self.velocity[1]], self.player))
                 objects[len(objects)-1].move()
-                if avAb[1]==1:
-                    BLAST_SOUND.play()
+                BLAST_SOUND.play()
                 self.add_timeC = time.time()+random.uniform(0, 10)
 
             if time.time()-self.add_timeD>self.atD and avAb[2]>0 and self.velocity[0]>2:
                 objects.append(BlackHole(self.xpos, self.ypos, 250, 15, [-10, self.velocity[1]]))
                 for i in range(0, 5):
                     objects[len(objects)-1].place_move()
-                if avAb[2]==1:
-                    BLACK_HOLE_SOUND.play()
+                BLACK_HOLE_SOUND.play()
                 self.add_timeD = time.time()+random.uniform(0, 15)
             if time.time()-self.add_timeE>self.atE and avAb[3]>0 and self.velocity[0]>2:
                 objects.append(WhiteHole(self.xpos, self.ypos, 250, 15, [-10, self.velocity[1]]))
                 for i in range(0, 5):
                     objects[len(objects)-1].place_move()
-                if avAb[3]==1:
-                    WHITE_HOLE_SOUND.play()
+                WHITE_HOLE_SOUND.play()
                 self.add_timeE = time.time()+random.uniform(0, 15)
 
             if time.time()-self.add_timeF>self.atF and avAb[4]>0:
@@ -654,17 +706,21 @@ class AI(Player):
                 objects[len(objects)-1].move()
                 objects[len(objects)-1].move()
                 objects[len(objects)-1].move()
-                if avAb[4]==1:
-                    BLAST_SOUND.play()
+                BLAST_SOUND.play()
                 self.add_timeF = time.time()+random.uniform(0, 8)
 
             if time.time()-self.add_timeG>self.atG and avAb[5]>0:
-                objects.append(WormHole(self.xpos, self.ypos, 80, 5, [-10, self.velocity[1]]))
+                objects.append(Void(self.xpos, self.ypos, 80, 5, [-10, self.velocity[1]]))
                 for i in range(0, 5):
                     objects[len(objects)-1].place_move()
-                if avAb[5]==1:
-                    WORM_HOLE_SOUND.play()
+                WORM_HOLE_SOUND.play()
                 self.add_timeG = time.time()+random.uniform(0, 10)
+
+            if time.time()-self.add_timeH>self.atH and avAb[6]>0:
+                objects.append(NeutronStar(self.xpos, self.ypos, 100, 10, [-41, self.velocity[1]]))
+                objects[len(objects)-1].place_move()
+                NEUTRONSTAR_SOUND.play()
+                self.add_timeH = time.time()
 
         for i in range(0, self.TRAIL):
             self.xpoints[i] = self.xpoints[i+1]
@@ -703,9 +759,17 @@ class WhiteHole(Planet):
         self.initX = xpos*-2000
         self.initY = ypos*-2000
 
+        self.add_time = time.time()
+        self.life = random.uniform(30, 45)
+
     def place_move(self):
         self.xpos+=self.velocity[0]*math.cos(self.velocity[1])
         self.ypos+=self.velocity[0]*math.sin(self.velocity[1])
+
+    def bounds(self):
+        if (time.time()-self.add_time)>self.life:
+            self.xpos = -50
+            self.ypos = -50
 
 class Void(Planet):
     def __init__(self, xpos, ypos, mass, size, init_vect):
@@ -751,6 +815,181 @@ class Void(Planet):
         pygame.draw.line(screen, (104, 104, 176), (int(self.xpos-15), int(self.ypos+15)), (int(self.xpos), int(self.ypos+40)), 1)
         pygame.draw.line(screen, (104, 104, 176), (int(self.xpos+15), int(self.ypos-15)), (int(self.xpos), int(self.ypos-40)), 1)
 
+class NeutronStar(Planet):
+    def __init__(self, xpos, ypos, mass, size, init_vect):
+        super().__init__(xpos, ypos, mass, size, init_vect)
+
+        self.initX = xpos*-800
+        self.initY = ypos*-800
+
+        self.player = -3
+
+        self.radius = 0.0
+
+        self.push = 10
+
+        self.r = random.uniform(20, 230)
+        self.g = random.uniform(20, 230)
+        self.b = random.uniform(20, 230)
+
+        self.ir = self.r
+        self.ig = self.g
+        self.ib = self.b
+
+        self.color = (int(self.ir), int(self.ig), int(self.ib))
+
+        self.rtime = time.time()
+        self.rlim = 3
+
+        self.size = size
+
+        self.add_time = time.time()
+        self.life = random.uniform(45, 60)
+
+    def place_move(self):
+        self.xpos+=self.velocity[0]*math.cos(self.velocity[1])
+        self.ypos+=self.velocity[0]*math.sin(self.velocity[1])
+
+    def shoot_wave(self):
+        
+        if self.radius>0:
+            self.radius+=0.7
+
+            if self.radius>2:
+                pygame.draw.circle(screen, (int(self.r), int(self.g), int(self.b)), (int(self.xpos), int(self.ypos)), int(self.radius), 1)
+
+                self.r-=0.1
+                self.g-=0.1
+                self.b-=0.1
+
+                if self.r<0:
+                    self.r = 0
+
+                if self.g<0:
+                    self.g = 0
+
+                if self.b<0:
+                    self.b = 0
+                
+        elif (time.time()-self.rtime)>self.rlim:
+            self.radius+=0.3
+
+    def check_wave(self):
+        global objects
+        global waves
+
+        if self.radius > self.size:
+            for i in range(0, len(objects)):
+                if objects[i].player!=0 and objects[i].player!=-3:
+                    diffx = objects[i].xpos - self.xpos
+                    diffy = objects[i].ypos - self.ypos
+
+                    dist = math.hypot(diffx, diffy)
+
+                    if self.radius>=dist:
+                        if diffx != 0:
+                            ang = math.atan(diffy/diffx)
+                        else:
+                            ang = math.pi/2
+
+                        if diffx<0:
+                            ang+=math.pi
+
+                        waves.append(ShockWave(self.xpos, self.ypos, -ang, 0.40))
+                        SHOCKWAVE_SOUND.play()
+                        
+                        self.radius = 0.0
+                        self.rtime = time.time()
+
+                        self.r = self.ir
+                        self.g = self.ig
+                        self.b = self.ib
+
+    def draw(self):
+        self.shoot_wave()
+        self.check_wave()
+        pygame.draw.circle(screen, self.color, (int(self.xpos), int(self.ypos)), self.size)
+
+    def bounds(self):
+        if (time.time()-self.add_time)>self.life:
+            self.xpos = WINDOW_W+50
+            self.ypos = WINDOW_H+50
+
+
+class ShockWave(object):
+    def __init__(self, xpos, ypos, angle, speed):
+
+        self.xpos = xpos
+        self.ypos = ypos
+
+        self.angle = angle
+        self.addA = math.pi/3
+
+        self.speed = speed
+        
+        self.radius = 10.0
+
+        self.VA = 10
+
+        self.r = int(random.uniform(20, 230))
+        self.g = int(random.uniform(20, 230))
+        self.b = int(random.uniform(20, 230))
+
+        self.d = False
+
+    def incW(self):
+        self.radius+=self.speed
+
+    def bounds(self):
+        bx = self.xpos+self.radius*math.cos(self.angle)
+        by = self.ypos-self.radius*math.sin(self.angle)
+
+        if bx<0 or bx>WINDOW_W:
+            self.d = True
+        if by<0 or by>WINDOW_H:
+            self.d = True
+
+    def checkC(self):
+        global objects
+        
+        for i in range(0, len(objects)):
+            if objects[i].player!=0 and objects[i].player!=-3:
+                diffX = objects[i].xpos-self.xpos
+                diffY = -(objects[i].ypos-self.ypos)
+                
+                diff = math.hypot(diffX, diffY)
+
+                angD = 0.0
+                angN = 0.0
+
+                if diffX!=0:
+                    angD = math.atan(diffY/diffX)
+                else:
+                    angD = math.pi/2
+
+                if diffX<0:
+                    angD+=math.pi
+
+                if diffX!=0:
+                    angN = math.atan(-diffY/diffX)
+                else:
+                    angN = math.pi/2
+
+                if diffX<0:
+                    angN+=math.pi
+
+                absdif = abs(diff-self.radius)
+
+                degdiff = abs(math.degrees(angD)%360-math.degrees(self.angle)%360)%360
+
+                if absdif<objects[i].size and degdiff<math.degrees(self.addA):
+                    objects[i].add_velocity(self.VA, angN)
+                    self.d = True
+
+    def draw(self):
+        pygame.draw.arc(screen, (self.r, self.b, self.b), (int(self.xpos-self.radius), int(self.ypos-self.radius),
+                                                           int(self.radius*2), int(self.radius*2)), self.angle-self.addA, self.angle+self.addA, 3)
+        
 
 # Math
 
@@ -799,6 +1038,7 @@ def delete_extra():
     global game_over
     global objects
     global songsAct
+    global playG
 
     amtlv = 0
 
@@ -818,7 +1058,20 @@ def delete_extra():
         for i in range(0, len(indices)):
             objects.pop(indices[i])
 
-    if amtlv<=1:
+    windices = []
+
+    for i in range(0, len(waves)):
+        if waves[i].d:
+            windices.append(i)
+
+    windices.reverse()
+
+    if len(windices)>0:
+        for i in range(0, len(windices)):
+            waves.pop(windices[i])
+
+
+    if (amtlv==1 and not(playG)) or amtlv<1:
         pi = 0
         
         for i in range(0, len(objects)):
@@ -840,6 +1093,8 @@ def delete_extra():
         pygame.mixer.music.load('GameSounds/spacesound.ogg')
 
         pygame.mixer.music.play()
+
+        playG = False
 
 def zero_div(n, d):
     return n / d if d else 0
@@ -866,6 +1121,7 @@ zero_vect = [0.0, 0.0]
 test_vect = [0.0, 0.0]
 
 #proj = Projectile(650, 50, 10, 5, test_vect, 1)
+p0 = Planet(int(random.uniform(100, 1100)), int(random.uniform(100, 650)), int(random.uniform(200, 650)), int(random.uniform(18, 35)), zero_vect)
 p1 = Planet(int(random.uniform(100, 450)), int(random.uniform(100, 375)), int(random.uniform(200, 650)), int(random.uniform(18, 35)), zero_vect)
 p2 = Planet(int(random.uniform(100, 450)), int(random.uniform(375, 650)), int(random.uniform(200, 650)), int(random.uniform(18, 35)), zero_vect)
 p3 = Planet(int(random.uniform(750, 1100)), int(random.uniform(100, 375)), int(random.uniform(200, 650)), int(random.uniform(18, 35)), zero_vect)
@@ -881,10 +1137,10 @@ p10 = Planet(int(random.uniform(600, 1100)), int(random.uniform(375, 650)), int(
 
 # A=Projectile B=Slow Projectile C=Escape Projectile D=Black Hole E=White Hole F=Heavy Projectile G=Void
 
-player1 = Player(50, 50, 30, 7, zero_vect, pygame.K_a, pygame.K_d, pygame.K_w, pygame.K_s, pygame.K_q, pygame.K_e, pygame.K_z, pygame.K_x, pygame.K_1, pygame.K_2, pygame.K_3, pygame.K_r, 1)
-player2 = Player(50, WINDOW_H-50, 30, 7, zero_vect, pygame.K_b, pygame.K_m, pygame.K_h, pygame.K_n, pygame.K_g, pygame.K_j, pygame.K_v, pygame.K_k, pygame.K_y, pygame.K_i, pygame.K_t, pygame.K_u, 2)
-player3 = Player(WINDOW_W-50, 50, 30, 7, zero_vect, pygame.K_LEFT, pygame.K_RIGHT, pygame.K_UP, pygame.K_DOWN, pygame.K_p, pygame.K_SEMICOLON, pygame.K_BACKSLASH, pygame.K_PERIOD, pygame.K_QUOTE, pygame.K_LEFTBRACKET, pygame.K_RIGHTBRACKET, pygame.K_SLASH,  3)
-player4 = Player(WINDOW_W-50, WINDOW_H-50, 30, 7, zero_vect, pygame.K_KP4, pygame.K_KP6, pygame.K_KP8, pygame.K_KP2, pygame.K_KP7, pygame.K_KP9, pygame.K_KP1, pygame.K_KP3, pygame.K_KP5, pygame.K_KP_MULTIPLY, pygame.K_KP_MINUS, pygame.K_KP_DIVIDE, 4)
+player1 = Player(50, 50, 30, 7, zero_vect, pygame.K_a, pygame.K_d, pygame.K_w, pygame.K_s, pygame.K_q, pygame.K_e, pygame.K_z, pygame.K_x, pygame.K_1, pygame.K_2, pygame.K_3, pygame.K_4, pygame.K_r,1)
+player2 = Player(50, WINDOW_H-50, 30, 7, zero_vect, pygame.K_b, pygame.K_m, pygame.K_h, pygame.K_n, pygame.K_g, pygame.K_j, pygame.K_v, pygame.K_k, pygame.K_y, pygame.K_i, pygame.K_t, pygame.K_7, pygame.K_u, 2)
+player3 = Player(WINDOW_W-50, 50, 30, 7, zero_vect, pygame.K_LEFT, pygame.K_RIGHT, pygame.K_UP, pygame.K_DOWN, pygame.K_p, pygame.K_SEMICOLON, pygame.K_BACKSLASH, pygame.K_PERIOD, pygame.K_QUOTE, pygame.K_LEFTBRACKET, pygame.K_RIGHTBRACKET, pygame.K_l, pygame.K_SLASH, 3)
+player4 = Player(WINDOW_W-50, WINDOW_H-50, 30, 7, zero_vect, pygame.K_KP4, pygame.K_KP6, pygame.K_KP8, pygame.K_KP2, pygame.K_KP7, pygame.K_KP9, pygame.K_KP1, pygame.K_KP3, pygame.K_KP5, pygame.K_KP_MULTIPLY, pygame.K_KP_MINUS, pygame.K_KP_PLUS, pygame.K_KP_DIVIDE, 4)
 
 
 ai1 = AI(50, 50, 30, 7, zero_vect, 1)
@@ -895,6 +1151,7 @@ ai4 = AI(WINDOW_W-50, WINDOW_H-50, 30, 7, zero_vect, 4)
 
 def reset():
     global objects
+    global playG
 
     objects = []
 
@@ -915,19 +1172,22 @@ def reset():
 
     # Xpos, Ypos, Mass, Radius, Initial Vector, Keys, Player Number
 
-    player1 = Player(50, 50, 30, 7, zero_vect, pygame.K_a, pygame.K_d, pygame.K_w, pygame.K_s, pygame.K_q, pygame.K_e, pygame.K_z, pygame.K_x, pygame.K_1, pygame.K_2, pygame.K_3, pygame.K_r, 1)
-    player2 = Player(50, WINDOW_H-50, 30, 7, zero_vect, pygame.K_b, pygame.K_m, pygame.K_h, pygame.K_n, pygame.K_g, pygame.K_j, pygame.K_v, pygame.K_k, pygame.K_y, pygame.K_i, pygame.K_t, pygame.K_u, 2)
-    player3 = Player(WINDOW_W-50, 50, 30, 7, zero_vect, pygame.K_LEFT, pygame.K_RIGHT, pygame.K_UP, pygame.K_DOWN, pygame.K_p, pygame.K_SEMICOLON, pygame.K_BACKSLASH, pygame.K_PERIOD, pygame.K_QUOTE, pygame.K_LEFTBRACKET, pygame.K_RIGHTBRACKET, pygame.K_SLASH,  3)
-    player4 = Player(WINDOW_W-50, WINDOW_H-50, 30, 7, zero_vect, pygame.K_KP4, pygame.K_KP6, pygame.K_KP8, pygame.K_KP2, pygame.K_KP7, pygame.K_KP9, pygame.K_KP1, pygame.K_KP3, pygame.K_KP5, pygame.K_KP_MULTIPLY, pygame.K_KP_MINUS, pygame.K_KP_DIVIDE, 4)
+    player1 = Player(50, 50, 30, 7, zero_vect, pygame.K_a, pygame.K_d, pygame.K_w, pygame.K_s, pygame.K_q, pygame.K_e, pygame.K_z, pygame.K_x, pygame.K_1, pygame.K_2, pygame.K_3, pygame.K_4, pygame.K_r,1)
+    player2 = Player(50, WINDOW_H-50, 30, 7, zero_vect, pygame.K_b, pygame.K_m, pygame.K_h, pygame.K_n, pygame.K_g, pygame.K_j, pygame.K_v, pygame.K_k, pygame.K_y, pygame.K_i, pygame.K_t, pygame.K_7, pygame.K_u, 2)
+    player3 = Player(WINDOW_W-50, 50, 30, 7, zero_vect, pygame.K_LEFT, pygame.K_RIGHT, pygame.K_UP, pygame.K_DOWN, pygame.K_p, pygame.K_SEMICOLON, pygame.K_BACKSLASH, pygame.K_PERIOD, pygame.K_QUOTE, pygame.K_LEFTBRACKET, pygame.K_RIGHTBRACKET, pygame.K_l, pygame.K_SLASH, 3)
+    player4 = Player(WINDOW_W-50, WINDOW_H-50, 30, 7, zero_vect, pygame.K_KP4, pygame.K_KP6, pygame.K_KP8, pygame.K_KP2, pygame.K_KP7, pygame.K_KP9, pygame.K_KP1, pygame.K_KP3, pygame.K_KP5, pygame.K_KP_MULTIPLY, pygame.K_KP_MINUS, pygame.K_KP_PLUS, pygame.K_KP_DIVIDE, 4)
 
     ai1 = AI(50, 50, 30, 7, zero_vect, 1)
     ai2 = AI(50, WINDOW_H-50, 30, 7, zero_vect, 2)
     ai3 = AI(WINDOW_W-50, 50, 30, 7, zero_vect, 3)
     ai4 = AI(WINDOW_W-50, WINDOW_H-50, 30, 7, zero_vect, 4)
 
-    if NUMPL>0:
-        objects.append(p1)
+    pn = 0
+
+    if NUMPL==1:
+        objects.append(p0)
     if NUMPL>1:
+        objects.append(p1)
         objects.append(p2)
     if NUMPL>2:
         objects.append(p3)
@@ -948,23 +1208,34 @@ def reset():
 
     if playerNums[0]==1:
         objects.append(player1)
+        pn+=1
     elif playerNums[0]==2:
         objects.append(ai1)
+        pn+=1
 
     if playerNums[1]==1:
         objects.append(player2)
+        pn+=1
     elif playerNums[1]==2:
         objects.append(ai2)
+        pn+=1
 
     if playerNums[2]==1:
         objects.append(player3)
+        pn+=1
     elif playerNums[2]==2:
         objects.append(ai3)
+        pn+=1
 
     if playerNums[3]==1:
         objects.append(player4)
+        pn+=1
     elif playerNums[3]==2:
         objects.append(ai4)
+        pn+=1
+        
+    if pn==1:
+        playG = True
 
     if not(songsAct):
         new_song()
@@ -999,6 +1270,12 @@ def game():
             objects[i].move()
             objects[i].draw()
             objects[i].collide()
+
+        for i in range(0, len(waves)):
+            waves[i].bounds()
+            waves[i].incW()
+            waves[i].checkC()
+            waves[i].draw()
 
         pygame.display.update()
 
@@ -1040,6 +1317,17 @@ def draw_end(num):
     pygame.display.update()
 
 def draw_avAb():
+    if avAb[7]==1:
+        text = font.render("R", True, (0, 255, 0), (0, 0, 0))
+        textRect = text.get_rect()  
+        textRect.center = (WINDOW_W//2-110, WINDOW_H//2-300)
+        screen.blit(text, textRect)
+    else:
+        text = font.render("R", True, (255, 0, 0), (0, 0, 0))
+        textRect = text.get_rect()  
+        textRect.center = (WINDOW_W//2-110, WINDOW_H//2-300)
+        screen.blit(text, textRect)
+    
     if avAb[0]==1:
         text = font.render("B", True, (0, 255, 0), (0, 0, 0))
         textRect = text.get_rect()  
@@ -1135,6 +1423,39 @@ def draw_avAb():
         textRect.center = (WINDOW_W//2+70, WINDOW_H//2-300)
         screen.blit(text, textRect)
 
+    if avAb[6]==1:
+        text = font.render("H", True, (0, 255, 0), (0, 0, 0))
+        textRect = text.get_rect()  
+        textRect.center = (WINDOW_W//2+100, WINDOW_H//2-300)
+        screen.blit(text, textRect)
+    elif avAb[6]==2:
+        text = font.render("H", True, (0, 0, 255), (0, 0, 0))
+        textRect = text.get_rect()  
+        textRect.center = (WINDOW_W//2+100, WINDOW_H//2-300)
+        screen.blit(text, textRect)
+    else:
+        text = font.render("H", True, (255, 0, 0), (0, 0, 0))
+        textRect = text.get_rect()  
+        textRect.center = (WINDOW_W//2+100, WINDOW_H//2-300)
+        screen.blit(text, textRect)
+
+    if avAb[8]==1:
+        text = font.render("W", True, (0, 255, 0), (0, 0, 0))
+        textRect = text.get_rect()  
+        textRect.center = (WINDOW_W//2+130, WINDOW_H//2-300)
+        screen.blit(text, textRect)
+    elif avAb[8]==2:
+        text = font.render("W", True, (0, 0, 255), (0, 0, 0))
+        textRect = text.get_rect()  
+        textRect.center = (WINDOW_W//2+130, WINDOW_H//2-300)
+        screen.blit(text, textRect)
+    else:
+        text = font.render("W", True, (255, 0, 0), (0, 0, 0))
+        textRect = text.get_rect()  
+        textRect.center = (WINDOW_W//2+130, WINDOW_H//2-300)
+        screen.blit(text, textRect)
+        
+
 def draw_players():
     if playerNums[0]==1:
         pygame.draw.rect(screen, (0, 255, 0), (WINDOW_W//2-55, WINDOW_H//2+200, 20, 20))
@@ -1175,9 +1496,9 @@ def draw_logo():
     pygame.draw.circle(screen, (255, 255, 255), (WINDOW_W//2, WINDOW_H//2), 150, 3)
 
 def draw_author():
-    tfont = pygame.font.SysFont("Arial", 25)
+    tfont = pygame.font.SysFont("verdana", 25)
     tfont.set_bold(True)
-    text = tfont.render(("BY MIHIR KONDAPALLI"), True, (96, 130, 166), (0, 0, 0))
+    text = tfont.render(("MIHIR KONDAPALLI"), True, (96, 130, 166), (0, 0, 0))
     textRect = text.get_rect()  
     textRect.center = (WINDOW_W//2, WINDOW_H//2+330)
     screen.blit(text, textRect)
@@ -1217,6 +1538,8 @@ def adjust_sound_vol(vol):
     BLACK_HOLE_SOUND.set_volume(vol)
     WHITE_HOLE_SOUND.set_volume(vol)
     WORM_HOLE_SOUND.set_volume(vol)
+    NEUTRONSTAR_SOUND.set_volume(vol)
+    SHOCKWAVE_SOUND.set_volume(vol)
     APPEAR_SOUND.set_volume(vol)
     RADAR_SOUND.set_volume(vol)
     CLOSE_SOUND.set_volume(vol)
@@ -1251,8 +1574,10 @@ def main():
     SPROT = 17
 
     adjust_sound_vol(0.5)
+
+    running = True
     
-    while True:
+    while running:        
         screen.fill((0, 0, 0))
         
         draw_vol()
@@ -1280,6 +1605,8 @@ def main():
                 if event.key == pygame.K_q:
                     pygame.display.quit()
                     pygame.quit()
+
+                    running = False
                 
                 if event.key == pygame.K_UP:
                     vol = pygame.mixer.music.get_volume()+0.01
@@ -1324,6 +1651,9 @@ def main():
                 elif event.key == pygame.K_4:
                     playerNums[3] = (playerNums[3]+1)%3
 
+                elif event.key == pygame.K_r:
+                    avAb[7] = (avAb[7]+1)%2
+
                 elif event.key == pygame.K_b:
                     avAb[0] = (avAb[0]+1)%3
 
@@ -1341,6 +1671,12 @@ def main():
 
                 elif event.key == pygame.K_g:
                     avAb[5] = (avAb[5]+1)%3
+
+                elif event.key == pygame.K_h:
+                    avAb[6] = (avAb[6]+1)%3
+
+                elif event.key == pygame.K_w:
+                    avAb[8] = (avAb[8]+1)%3
                     
                 elif event.key == pygame.K_p:
                     time.sleep(0.1)
@@ -1381,7 +1717,7 @@ def main():
                     if NUMPL>10:
                         NUMPL=10
 
-                elif event.key == pygame.K_r:
+                elif event.key == pygame.K_BACKQUOTE:
                     pygame.mixer.music.rewind()
                     
                 elif event.key == pygame.K_RETURN:
